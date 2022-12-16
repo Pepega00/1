@@ -1,0 +1,151 @@
+#include <iostream>
+#include <fstream>
+#include <cstring>
+int main(int argc, char* argv[]){
+  int counter=0;
+  char mychar;
+  if (argc!=4){
+    std::cout<<"wrong amount of arguments"<<std::endl;
+    return 1;
+  }
+  std::ifstream inputfile(argv[2]);
+  std::ofstream outfile(argv[3]);
+  inputfile.seekg(0, std::ios::end);
+  int sz = inputfile.tellg();
+  //std::cout<<"Size of the file is"<<" "<<sz<<" "<<"bytes"<<std::endl;
+  //size counted
+  char* arr=new char[sz];
+  inputfile.seekg(0, std::ios::beg);//back to the start
+  while(!inputfile.eof()){
+    inputfile.get(mychar);
+    if(!inputfile.eof()){
+      arr[counter]=mychar;
+      counter++;
+    }
+  }
+  
+  //packed everything in array
+  //for (int i=0;i<sz;i++){
+  //  std::cout<<arr[i];
+  //}
+  std::cout<<'\n';
+  //to show contents of array
+  if(strcmp(argv[1], "-e")==0){
+    char seq[128]={" "};
+    bool sameseq=(arr[0]==arr[1]);
+    signed char seqcounter=0;
+    int sign=1;
+    seq[0]=arr[0];
+    for(int idx=1;idx<sz;idx++){
+      //std::cout<<arr[idx]<<" "<<int(seqcounter)<<std::endl;
+      if((sameseq && seqcounter==127) || (!sameseq && seqcounter==127)){
+        if(sameseq && seqcounter==127){
+          outfile<<seqcounter;
+          outfile<<seq[seqcounter];
+          for(int i=0;i<seqcounter;i++){
+            seq[i]=' ';
+          }
+          seqcounter=0;    
+          if(arr[idx]==arr[idx+1]){
+            sameseq=true;
+          }
+          else{
+            sameseq=false;
+          }
+          seq[0]=arr[idx-1];
+        }
+        if(!sameseq && seq[128]!=' '){
+          seqcounter*=-1;
+          seqcounter--;
+          outfile<<seqcounter;
+          for(int i=0;i<128;i++){
+            outfile<<seq[i];
+            seq[i]=' ';
+          } 
+          seqcounter=0; 
+          if(arr[idx]==arr[idx+1]){
+            sameseq=true;
+          }
+          else{
+            sameseq=false;
+          } 
+          seq[0]=arr[idx];
+        }
+      }
+      else{
+        if (arr[idx]==seq[seqcounter]){
+          if(sameseq){
+            seqcounter++;
+            seq[seqcounter]=arr[idx];
+          }
+          else{
+            sameseq=true;
+            seqcounter*=-1;
+            outfile<<seqcounter;
+            for(int i=0;i<-1*seqcounter;i++){
+              outfile<<seq[i];
+              seq[i]=' ';
+            }
+            seqcounter*=-1;
+            seq[seqcounter]=' ';
+            seqcounter=1;
+            seq[seqcounter-1]=arr[idx];
+            seq[seqcounter]=arr[idx];
+          }
+        }
+        else{
+          if(!sameseq){
+            seqcounter++;
+            seq[seqcounter]=arr[idx];
+          }
+          else{
+            sameseq=false;
+            outfile<<seqcounter;
+            outfile<<seq[seqcounter];
+            seqcounter=0;
+            seq[seqcounter]=arr[idx];
+            if(seq[seqcounter]==arr[idx+1]){
+              sameseq=true;
+            }
+            else{
+              sameseq=false;
+            }
+          }
+        }
+      }
+    }
+    if(sameseq){
+      outfile<<seqcounter<<seq[seqcounter];
+    }
+    else{
+      seqcounter*=-1;
+      seqcounter--;
+      outfile<<seqcounter;
+      seqcounter*=-1;
+      for(int i=0;i<seqcounter;i++){
+        outfile<<seq[i];
+      }
+    }
+  }
+  if(strcmp(argv[1], "-d")==0){
+    for (int idx=0;idx<sz;idx++){
+      int counter=arr[idx];
+      if (arr[idx]>0){
+          counter++; 
+          idx++;
+          for(int c=0;c<counter;c++){
+              outfile<<arr[idx];
+          }   
+      }
+      else{
+          counter*=-1;
+          for(int c=0;c<counter;c++){
+              idx++;
+              outfile<<arr[idx];
+          }
+      }
+    }
+  }
+  delete[] arr;
+	return 0;
+}
